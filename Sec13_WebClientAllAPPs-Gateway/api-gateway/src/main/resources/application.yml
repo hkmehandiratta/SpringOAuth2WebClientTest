@@ -1,0 +1,62 @@
+
+spring.cloud.gateway.routes[0].id: albumResourceServer
+spring.cloud.gateway.routes[0].uri: lb://albumResourceServer
+spring.cloud.gateway.routes[0].predicates[0]: Path=/albums/**
+spring.cloud.gateway.routes[0].filters[0]: RemoveRequestHeader=Cookie
+
+spring.cloud.gateway.routes[1].id: PhotoAppWeb
+spring.cloud.gateway.routes[1].uri: http://${PHOTOAPP_SERVICE_URI:localhost}:8087
+spring.cloud.gateway.routes[1].predicates[0]: Path=/photoAlbums/**
+spring.cloud.gateway.routes[1].filters[0]: RemoveRequestHeader=Cookie
+
+
+spring.cloud.gateway.routes[2].id: photon2webapp
+spring.cloud.gateway.routes[2].uri: http://${PHOTON2_APP_SERVICE_URI:localhost}:8088
+spring.cloud.gateway.routes[2].predicates[0]: Path=/photon2/**
+spring.cloud.gateway.routes[2].filters[0]: RemoveRequestHeader=Cookie
+
+eureka.client.serviceUrl.defaultZone: http://localhost:8010/eureka
+
+server:
+  port: 8083
+  
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      default-filters:
+        - TokenRelay=
+        - RemoveRequestHeader=Cookie
+      discovery:
+        locator:
+          enabled: true           
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            token-uri: http://localhost:8080/auth/realms/appsdeveloperblog/protocol/openid-connect/token
+            authorization-uri: http://localhost:8080/auth/realms/appsdeveloperblog/protocol/openid-connect/auth
+            userinfo-uri: http://localhost:8080/auth/realms/appsdeveloperblog/protocol/openid-connect/userinfo
+            jwk-set-uri: http://localhost:8080/auth/realms/appsdeveloperblog/protocol/openid-connect/certs
+            user-name-attribute: preferred_username
+            user-info-authentication-method: header
+        registration:
+          keycloakwithtestscope:
+            provider: keycloak
+            client-id: photo-app-webclient
+            client-secret: DGwPfNIc4XmHEYMMmMm3mAzc21Ws08eZ
+            authorization-grant-type: authorization_code
+            scope: openid, profile, roles
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/auth/realms/appsdeveloperblog	
+          jwk-set-uri: http://localhost:8080/auth/realms/appsdeveloperblog/protocol/openid-connect/certs    
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty: DEBUG
+
